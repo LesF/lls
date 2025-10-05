@@ -94,6 +94,26 @@ int GetConsoleWidth() {
     return 80; // Default to 80 columns if unable to determine
 }
 
+/* Example:
+    setColor(FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    std::cout << "DirectoryName\n";
+
+    setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE); // Default gray
+    std::cout << "FileName\n";
+*/
+void setColor(WORD color) {
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+}
+
+void setItemColor(BOOL isDirectory) {
+    if (isDirectory) {
+        setColor(FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    }
+    else {
+        setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    }
+}
+
 // Function to list files and directories based on LsOptions
 void ListFiles(const LsOptions& options) {
     try {
@@ -138,6 +158,7 @@ void ListFiles(const LsOptions& options) {
             // Print filenames in columns
             int count = 0;
             for (const auto& entry : entries) {
+                setItemColor(entry.is_directory());
                 std::cout << std::setw(maxFilenameLength) << std::left << entry.path().filename().string() << "  ";
                 if (++count % columns == 0) {
                     std::cout << std::endl;
@@ -161,6 +182,7 @@ void ListFiles(const LsOptions& options) {
                 // Use localtime_s for thread-safe conversion (without std:: prefix)
                 std::tm timeInfo;
                 if (localtime_s(&timeInfo, &cftime) == 0) {
+                    setItemColor(entry.is_directory());
                     std::cout << (entry.is_directory() ? "d" : "-")
                         << std::setw(10) << fs::file_size(entry) << " "
                         << std::put_time(&timeInfo, "%Y-%m-%d %H:%M:%S") << " "
@@ -172,6 +194,7 @@ void ListFiles(const LsOptions& options) {
             }
             else {
                 // Simple listing format
+                setItemColor(entry.is_directory());
                 std::cout << entry.path().filename().string() << (options.oneColumn ? "\n" : "  ");
             }
         }
@@ -202,6 +225,7 @@ int main(int argc, char* argv[]) {
     //std::cout << "Multi-column: " << (options.multiColumn ? "true" : "false") << std::endl;
 
     ListFiles(options);
+    setItemColor(false);
 
     return 0;
 }
